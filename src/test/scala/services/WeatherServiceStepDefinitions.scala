@@ -4,6 +4,7 @@ import io.cucumber.datatable.DataTable
 import io.cucumber.scala.{EN, ScalaDsl}
 import org.junit.jupiter.api.Assertions.*
 import org.mockito.Mockito.{mock, when}
+import services.models.Characterization
 import sttp.client4.Response
 import sttp.model.{StatusCode, Uri}
 
@@ -76,17 +77,17 @@ class WeatherServiceStepDefinitions extends ScalaDsl with EN {
     val expectedLocation: String = columns.get(0).get("location")
     val expectedTemperature: Int = columns.get(0).get("temperature").toInt
     val expectedDescription: String = columns.get(0).get("shortDescription")
-    val expectedCharacterization: String = columns.get(0).get("characterization")
+    val expectedCharacterization: Characterization = Characterization.valueOf(columns.get(0).get("characterization"))
     val expectedWeatherModel: WeatherModel = WeatherModel(expectedLocation, expectedTemperature, expectedDescription, expectedCharacterization)
     
     val responseJson: ujson.Value = ujson.read(returnedResponse.body)
     val actualLocation: String = returnedLocation
     val actualTemperature: Int = responseJson("properties")("periods")(0)("temperature").num.toInt
     val actualShortDescription: String = responseJson("properties")("periods")(0)("shortForecast").str
-    val actualCharacterization: String = actualTemperature match {
-      case temperature if temperature < 40 => "cold"
-      case temperature if (temperature >= 40 && temperature < 60) => "moderate"
-      case temperature if temperature >= 60 => "hot"
+    val actualCharacterization: Characterization = actualTemperature match {
+      case temperature if temperature < 40 => Characterization.cold
+      case temperature if temperature >= 40 && temperature < 60 => Characterization.moderate
+      case temperature if temperature >= 60 => Characterization.hot
     }
     val actualWeatherModel: WeatherModel = WeatherModel(actualLocation, actualTemperature, actualShortDescription, actualCharacterization)
 

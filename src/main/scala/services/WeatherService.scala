@@ -1,11 +1,19 @@
 package services
 
 import exceptions.WeatherServiceException
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+import services.models.Characterization
+import spray.json.{DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat, deserializationError}
 import sttp.model.{StatusCode, Uri}
 
-case class WeatherModel(location: String, temperature: Int, shortDescription: String, characterization: String)
+case class WeatherModel(location: String, temperature: Int, shortDescription: String, characterization: Characterization)
 object WeatherJsonProtocol extends DefaultJsonProtocol {
+  implicit object CharacterizationFormat extends JsonFormat[Characterization] {
+    def write(obj: Characterization): JsValue = JsString(obj.toString)
+    def read(json: JsValue): Characterization = json match {
+      case JsString(s) => Characterization.valueOf(s)
+      case _ => deserializationError("Expected String value for Characterization")
+    }
+  }
   implicit val weatherFormat: RootJsonFormat[WeatherModel] = jsonFormat4(services.WeatherModel.apply)
 }
 
@@ -53,10 +61,10 @@ class WeatherService(helper: WeatherServiceHelper) {
   private def buildWeatherObject(value: ujson.Value, locationInfo: String): WeatherModel = {
     val temperature: Int = value("properties")("periods")(0)("temperature").num.toInt
     val shortDescription: String = value("properties")("periods")(0)("shortForecast").str
-    val characterization: String = temperature match {
-      case temperature if temperature < 40 => "cold"
-      case temperature if (temperature >= 40 && temperature < 60) => "moderate"
-      case temperature if temperature >= 60 => "hot"
+    val characterization: Characterization = temperature match {
+      case temperature if temperature < 40 => Characterization.cold
+      case temperature if temperature >= 40 && temperature < 60 => Characterization.moderate
+      case temperature if temperature >= 60 => Characterization.hot
       case _ => throw new WeatherServiceException("Temperature returned is invalid")
     }
     WeatherModel(locationInfo, temperature, shortDescription, characterization)
