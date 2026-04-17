@@ -84,11 +84,7 @@ class WeatherServiceStepDefinitions extends ScalaDsl with EN {
     val actualLocation: String = returnedLocation
     val actualTemperature: Int = responseJson("properties")("periods")(0)("temperature").num.toInt
     val actualShortDescription: String = responseJson("properties")("periods")(0)("shortForecast").str
-    val actualCharacterization: Characterization = actualTemperature match {
-      case temperature if temperature < 40 => Characterization.cold
-      case temperature if temperature >= 40 && temperature < 60 => Characterization.moderate
-      case temperature if temperature >= 60 => Characterization.hot
-    }
+    val actualCharacterization: Characterization = Characterization.assignCharacterization(actualTemperature)
     val actualWeatherModel: WeatherModel = WeatherModel(actualLocation, actualTemperature, actualShortDescription, actualCharacterization)
 
     assertEquals(expectedWeatherModel, actualWeatherModel)

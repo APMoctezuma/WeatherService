@@ -61,12 +61,7 @@ class WeatherService(helper: WeatherServiceHelper) {
   private def buildWeatherObject(value: ujson.Value, locationInfo: String): WeatherModel = {
     val temperature: Int = value("properties")("periods")(0)("temperature").num.toInt
     val shortDescription: String = value("properties")("periods")(0)("shortForecast").str
-    val characterization: Characterization = temperature match {
-      case temperature if temperature < 40 => Characterization.cold
-      case temperature if temperature >= 40 && temperature < 60 => Characterization.moderate
-      case temperature if temperature >= 60 => Characterization.hot
-      case _ => throw new WeatherServiceException("Temperature returned is invalid")
-    }
+    val characterization: Characterization = Characterization.assignCharacterization(temperature)
     WeatherModel(locationInfo, temperature, shortDescription, characterization)
   }
 }
